@@ -9,6 +9,16 @@ class SendButton extends Component{
   }
 }
 
+class SetUsername extends Component{
+  render(){
+    return(
+      <div className="message_input_wrapper">
+        <input id="username_input" className="username_input message_input" placeholder="Please enter a username (15 characters max)" maxLength="15" value={this.props.username} onChange={this.props.onChange} onKeyPress={this.props._handleKeyPress}/>
+      </div>
+    );
+  }
+}
+
 class MessageTextBoxContainer extends Component{
   render(){
     return(
@@ -22,7 +32,7 @@ class MessageTextBoxContainer extends Component{
 class Avatar extends Component {
   render(){
     return(
-      <div className="avatar"/>
+      <div className="avatar"><p className="username">{this.props.username}</p></div>
     );
   }
 }
@@ -99,27 +109,29 @@ class MessagesContainer extends Component{
 class App extends Component {
   constructor(props){
     super(props);
-    this.state = {"messages": [], "current_message":""}
+    this.state = {"messages": [], "current_message":"", "username":"", "usernames": []};
     this.handleClick = this.handleClick.bind(this);
     this._handleKeyPress = this._handleKeyPress.bind(this);
     this.onChange = this.onChange.bind(this);
+    this.onChangeUser = this.onChangeUser.bind(this);
     this.addMessageBox = this.addMessageBox.bind(this);
   }
-  
 
   addMessageBox(enter=true){
     let messages = this.state.messages;
+    let usernames = this.state.usernames;
+    let username = this.state.username;
     let current_message = this.state.current_message;
     console.log(this.state);
     if(current_message && enter){
       messages = [...messages, {"message":current_message}];
-      fetch("http://localhost:3000?message=" + current_message)
+      fetch("http://localhost:3000?message=" + current_message + "&username=" + username)
       .then(res => res.json())
       .then(
         (result) => {
           console.log(result);
           this.setState({
-            messages: [...messages, {"message":result["message"], "isbotmessage":true}]
+            messages: [...messages, {"message":result["message"], "username":result["username"], "isbotmessage":true}]
           });
         },
         (error) => {
@@ -130,7 +142,9 @@ class App extends Component {
     }  
     this.setState({
       current_message: current_message,
-      messages
+      username: username,
+      messages,
+      usernames
     });
 
   }
@@ -145,6 +159,12 @@ class App extends Component {
     });  
   }
 
+  onChangeUser(e) {
+    this.setState({
+      username: e.target.value
+    });  
+  }
+
     _handleKeyPress(e) {
     let enter_pressed = false;
     if(e.key === "Enter"){
@@ -156,15 +176,14 @@ class App extends Component {
   render() {
     return (
       <div className="chat_window">
-        <MessagesContainer messages={this.state.messages}></MessagesContainer>
+        <MessagesContainer messages={this.state.messages} username={this.state.username}></MessagesContainer>
         <div className="bottom_wrapper clearfix">
-          <MessageTextBoxContainer 
-            _handleKeyPress={this._handleKeyPress} 
-            onChange={this.onChange} 
-            message={this.state.current_message}></MessageTextBoxContainer>
+
+          {(!this.state.username) ? <SetUsername _handleKeyPress={this._handleKeyPress} onChange={this.onChangeUser} username={this.state.username}></SetUsername> : <MessageTextBoxContainer _handleKeyPress={this._handleKeyPress} onChange={this.onChange} message={this.state.current_message}></MessageTextBoxContainer>}
+          
           <SendButton handleClick={this.handleClick}></SendButton>
         </div>
-        
+        <p>Username: {this.state.username}</p>
       </div>
     );
   }
